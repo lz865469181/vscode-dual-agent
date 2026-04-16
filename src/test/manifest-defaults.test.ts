@@ -19,10 +19,10 @@ describe("extension manifest defaults", () => {
     expect(properties["dualAgent.agentA.name"]?.default).toBe("Claude");
     expect(properties["dualAgent.agentB.name"]?.default).toBe("Codex");
     expect(properties["dualAgent.agentA.commandTemplate"]?.default).toBe(
-      'Get-Content -Raw "{{promptFile}}" | claude'
+      'Get-Content -Raw "{{promptFile}}" | claude -p --dangerously-skip-permissions'
     );
     expect(properties["dualAgent.agentB.commandTemplate"]?.default).toBe(
-      'Get-Content -Raw "{{promptFile}}" | codex'
+      'Get-Content -Raw "{{promptFile}}" | codex exec --full-auto -C "{{workspaceFolder}}" -'
     );
   });
 });

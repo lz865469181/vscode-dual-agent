@@ -134,7 +134,7 @@
         },
         "dualAgent.agentA.commandTemplate": {
           "type": "string",
-          "default": "Get-Content -Raw \"{{promptFile}}\" | claude",
+          "default": "Get-Content -Raw \"{{promptFile}}\" | claude -p --dangerously-skip-permissions",
           "description": "Command template for Agent A. Supports placeholders like {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
         },
         "dualAgent.agentA.generatePrompt": {
@@ -154,7 +154,7 @@
         },
         "dualAgent.agentB.commandTemplate": {
           "type": "string",
-          "default": "Get-Content -Raw \"{{promptFile}}\" | codex",
+          "default": "Get-Content -Raw \"{{promptFile}}\" | codex exec --full-auto -C \"{{workspaceFolder}}\" -",
           "description": "Command template for Agent B. Supports placeholders like {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
         },
         "dualAgent.agentB.generatePrompt": {

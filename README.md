@@ -36,8 +36,8 @@ The extension now ships with a default preset:
 
 - `Agent A = Claude`
 - `Agent B = Codex`
-- `dualAgent.agentA.commandTemplate = Get-Content -Raw "{{promptFile}}" | claude`
-- `dualAgent.agentB.commandTemplate = Get-Content -Raw "{{promptFile}}" | codex`
+- `dualAgent.agentA.commandTemplate = Get-Content -Raw "{{promptFile}}" | claude -p --dangerously-skip-permissions`
+- `dualAgent.agentB.commandTemplate = Get-Content -Raw "{{promptFile}}" | codex exec --full-auto -C "{{workspaceFolder}}" -`
 
 You can still override everything through VS Code settings:
 

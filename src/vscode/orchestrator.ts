@@ -252,7 +252,10 @@ export class DualAgentOrchestrator implements vscode.Disposable {
       return existing;
     }
 
-    const terminal = vscode.window.createTerminal(`Dual Agent: ${settings.agents[actor].name}`);
+    const terminal = vscode.window.createTerminal({
+      name: `Dual Agent: ${settings.agents[actor].name}`,
+      cwd: getWorkspaceRoot()
+    });
     this.terminals.set(actor, terminal);
     return terminal;
   }
