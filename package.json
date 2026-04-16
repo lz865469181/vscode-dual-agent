@@ -51,6 +51,10 @@
       {
         "command": "dualAgent.openSettings",
         "title": "Dual Agent: Open Settings"
+      },
+      {
+        "command": "dualAgent.repairLegacyTemplates",
+        "title": "Dual Agent: Repair Legacy Command Templates"
       }
     ],
     "views": {

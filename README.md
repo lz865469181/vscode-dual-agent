@@ -50,3 +50,5 @@ You can still override everything through VS Code settings:
 - `dualAgent.agentB.reviewPrompt`
 
 Command templates support placeholders such as `{{prompt}}`, `{{promptFile}}`, `{{outputFile}}`, `{{workspaceFolder}}`, `{{runtimeDir}}`, `{{taskFile}}`, and `{{reviewFile}}`.
+
+If you previously used the old PowerShell-only pipeline templates, run `Dual Agent: Repair Legacy Command Templates` once to replace them with the current cross-platform defaults.

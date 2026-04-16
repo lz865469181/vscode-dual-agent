@@ -17,6 +17,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("dualAgent.openRuntimeFolder", () => orchestrator.openRuntimeFolder()),
     vscode.commands.registerCommand("dualAgent.openReviewFile", () => orchestrator.openReviewFile()),
     vscode.commands.registerCommand("dualAgent.openSettings", () => orchestrator.openSettings()),
+    vscode.commands.registerCommand("dualAgent.repairLegacyTemplates", () => orchestrator.repairLegacyTemplates()),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration("dualAgent")) {
         void treeProvider.refresh();

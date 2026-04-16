@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 
 import { DEFAULT_AGENT_A, DEFAULT_AGENT_B, DEFAULT_STAGES } from "../core/defaults";
 import type { AgentId, StageDefinition, WorkflowFileConfig } from "../core/types";
+import { classifyCommandTemplate } from "./preflight";
 
 export interface AgentSettings {
   id: AgentId;
@@ -132,4 +133,49 @@ export function getWorkspaceRoot(): string {
   }
 
   return workspaceFolder.uri.fsPath;
+}
+
+export async function repairLegacyCommandTemplateSettings(): Promise<number> {
+  const config = vscode.workspace.getConfiguration("dualAgent");
+  let updated = 0;
+
+  const repairs: Array<{
+    key: "agentA.commandTemplate" | "agentB.commandTemplate";
+    replacement: string;
+  }> = [
+    { key: "agentA.commandTemplate", replacement: DEFAULT_AGENT_A.commandTemplate },
+    { key: "agentB.commandTemplate", replacement: DEFAULT_AGENT_B.commandTemplate }
+  ];
+
+  for (const repair of repairs) {
+    const inspection = config.inspect<string>(repair.key);
+
+    if (!inspection) {
+      continue;
+    }
+
+    const scopeValues: Array<{
+      value: string | undefined;
+      target: vscode.ConfigurationTarget;
+    }> = [
+      { value: inspection.globalValue, target: vscode.ConfigurationTarget.Global },
+      { value: inspection.workspaceValue, target: vscode.ConfigurationTarget.Workspace },
+      { value: inspection.workspaceFolderValue, target: vscode.ConfigurationTarget.WorkspaceFolder }
+    ];
+
+    for (const scopeValue of scopeValues) {
+      if (!scopeValue.value) {
+        continue;
+      }
+
+      if (classifyCommandTemplate(scopeValue.value).kind !== "legacy_template") {
+        continue;
+      }
+
+      await config.update(repair.key, repair.replacement, scopeValue.target);
+      updated += 1;
+    }
+  }
+
+  return updated;
 }

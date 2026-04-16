@@ -3,7 +3,13 @@ import * as vscode from "vscode";
 import { advanceWorkflow } from "../core/transitions";
 import type { AgentId, FailureReason, StageDefinition, WorkflowState } from "../core/types";
 import { CliAgentAdapter } from "./cli-adapter";
-import { getActiveStage, getExtensionSettings, getWorkspaceRoot, type ExtensionSettings } from "./config";
+import {
+  getActiveStage,
+  getExtensionSettings,
+  getWorkspaceRoot,
+  repairLegacyCommandTemplateSettings,
+  type ExtensionSettings
+} from "./config";
 import { runAgentPreflight } from "./preflight";
 import { RuntimeStore } from "./runtime-store";
 
@@ -156,6 +162,24 @@ export class DualAgentOrchestrator implements vscode.Disposable {
 
   async openSettings(): Promise<void> {
     await vscode.commands.executeCommand("workbench.action.openSettings", "dualAgent");
+  }
+
+  async repairLegacyTemplates(): Promise<void> {
+    try {
+      const updated = await repairLegacyCommandTemplateSettings();
+
+      if (updated > 0) {
+        await vscode.window.showInformationMessage(
+          `Updated ${updated} legacy Dual Agent command template setting${updated === 1 ? "" : "s"}.`
+        );
+      } else {
+        await vscode.window.showInformationMessage("No legacy Dual Agent command templates were found.");
+      }
+
+      this.changeEmitter.fire();
+    } catch (error) {
+      this.showError(error);
+    }
   }
 
   async getSnapshot(): Promise<SidebarSnapshot> {
@@ -457,10 +481,26 @@ export class DualAgentOrchestrator implements vscode.Disposable {
       .map((issue) =>
         issue.reason === "missing_executable"
           ? `${issue.agentName}: executable not found (${issue.executable})`
-          : `${issue.agentName}: could not infer executable from command template`
+          : issue.reason === "legacy_template"
+            ? `${issue.agentName}: legacy command template detected`
+            : `${issue.agentName}: could not infer executable from command template`
       )
       .join("; ");
 
-    await vscode.window.showErrorMessage(`Dual Agent preflight failed: ${details}`);
+    const hasLegacy = issues.some((issue) => issue.reason === "legacy_template");
+    const action = await vscode.window.showErrorMessage(
+      `Dual Agent preflight failed: ${details}`,
+      ...(hasLegacy ? ["Update Settings"] : []),
+      "Open Settings"
+    );
+
+    if (action === "Update Settings") {
+      await this.repairLegacyTemplates();
+      return;
+    }
+
+    if (action === "Open Settings") {
+      await this.openSettings();
+    }
   }
 }
