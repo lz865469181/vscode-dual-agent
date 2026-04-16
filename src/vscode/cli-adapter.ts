@@ -55,14 +55,14 @@ export class CliAgentAdapter {
 
   buildPrompt(stage: StageDefinition): string {
     const template = stage.mode === "generate" ? this.settings.prompts.generate : this.settings.prompts.review;
-    return renderTemplate(template, toTemplateRecord(this.createTemplateValues(stage)));
+    return renderTemplate(template, toTemplateRecord(this.createPromptTemplateValues(stage)));
   }
 
   parseOutput(stage: StageDefinition, raw: string): AgentOutput {
     return stage.mode === "review" ? parseReviewOutput(raw) : parseGenerationOutput(raw);
   }
 
-  private createTemplateValues(stage: StageDefinition, prompt = ""): StageTemplateValues {
+  private createCommandTemplateValues(stage: StageDefinition, prompt = ""): StageTemplateValues {
     const promptFile = this.getPromptFile(stage);
     const outputFile = this.getExpectedOutputFile(stage);
 
@@ -78,7 +78,28 @@ export class CliAgentAdapter {
     };
   }
 
+  private createPromptTemplateValues(stage: StageDefinition): StageTemplateValues {
+    const promptFile = this.getPromptFile(stage);
+    const outputFile = this.getExpectedOutputFile(stage);
+
+    return {
+      workspaceFolder: "the current workspace folder",
+      runtimeDir: this.toWorkspaceRelative(this.paths.runtimeDir),
+      taskFile: this.toWorkspaceRelative(this.paths.taskFile),
+      stateFile: this.toWorkspaceRelative(this.paths.stateFile),
+      reviewFile: this.toWorkspaceRelative(this.paths.reviewFile),
+      outputFile: this.toWorkspaceRelative(outputFile),
+      promptFile: this.toWorkspaceRelative(promptFile),
+      prompt: ""
+    };
+  }
+
+  private toWorkspaceRelative(filePath: string): string {
+    const relative = path.posix.relative(this.workspaceRoot.replace(/\\/g, "/"), filePath);
+    return relative.length > 0 ? relative : ".";
+  }
+
   buildCommandWithPrompt(stage: StageDefinition, prompt: string): string {
-    return renderTemplate(this.settings.commandTemplate, toTemplateRecord(this.createTemplateValues(stage, prompt)));
+    return renderTemplate(this.settings.commandTemplate, toTemplateRecord(this.createCommandTemplateValues(stage, prompt)));
   }
 }
