@@ -1,0 +1,212 @@
+{
+  "name": "dual-agent-vscode",
+  "displayName": "Dual Agent Workflow",
+  "description": "VS Code extension for deterministic dual-agent code generation and review workflows.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "private": true,
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:lz865469181/vscode-dual-agent.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:dualAgent.startWorkflow",
+    "onCommand:dualAgent.runNextStage",
+    "onView:dualAgent.sidebar"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "dualAgent.startWorkflow",
+        "title": "Dual Agent: Start Workflow"
+      },
+      {
+        "command": "dualAgent.runNextStage",
+        "title": "Dual Agent: Run Next Stage"
+      },
+      {
+        "command": "dualAgent.stopWorkflow",
+        "title": "Dual Agent: Stop Workflow"
+      },
+      {
+        "command": "dualAgent.resetWorkflowState",
+        "title": "Dual Agent: Reset Workflow State"
+      },
+      {
+        "command": "dualAgent.openRuntimeFolder",
+        "title": "Dual Agent: Open Runtime Folder"
+      },
+      {
+        "command": "dualAgent.openReviewFile",
+        "title": "Dual Agent: Open Review File"
+      },
+      {
+        "command": "dualAgent.openSettings",
+        "title": "Dual Agent: Open Settings"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "dualAgent.sidebar",
+          "name": "Dual Agent Workflow"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Dual Agent Workflow",
+      "properties": {
+        "dualAgent.workflow.autoRun": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically continue through stages until the workflow completes or fails."
+        },
+        "dualAgent.workflow.maxIterations": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "description": "Maximum number of workflow review cycles before stopping."
+        },
+        "dualAgent.workflow.timeoutSeconds": {
+          "type": "number",
+          "default": 900,
+          "minimum": 30,
+          "description": "Per-stage timeout in seconds."
+        },
+        "dualAgent.workflow.stages": {
+          "type": "array",
+          "default": [
+            {
+              "id": "agent_a_generate",
+              "actor": "agent_a",
+              "mode": "generate"
+            },
+            {
+              "id": "agent_b_review",
+              "actor": "agent_b",
+              "mode": "review"
+            },
+            {
+              "id": "agent_b_generate",
+              "actor": "agent_b",
+              "mode": "generate"
+            },
+            {
+              "id": "agent_a_review",
+              "actor": "agent_a",
+              "mode": "review"
+            }
+          ],
+          "description": "Ordered stage definitions for the dual-agent workflow."
+        },
+        "dualAgent.workflow.files.state": {
+          "type": "string",
+          "default": "state.json",
+          "description": "Runtime state file name."
+        },
+        "dualAgent.workflow.files.review": {
+          "type": "string",
+          "default": "review.json",
+          "description": "Review output file name."
+        },
+        "dualAgent.workflow.files.agentAOutput": {
+          "type": "string",
+          "default": "agent-a-output.json",
+          "description": "Agent A generation output file name."
+        },
+        "dualAgent.workflow.files.agentBOutput": {
+          "type": "string",
+          "default": "agent-b-output.json",
+          "description": "Agent B generation output file name."
+        },
+        "dualAgent.agentA.name": {
+          "type": "string",
+          "default": "Agent A",
+          "description": "Display name for Agent A."
+        },
+        "dualAgent.agentA.commandTemplate": {
+          "type": "string",
+          "default": "echo Configure dualAgent.agentA.commandTemplate to run your CLI with {{promptFile}} and write {{outputFile}}",
+          "description": "Command template for Agent A. Supports placeholders like {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
+        },
+        "dualAgent.agentA.generatePrompt": {
+          "type": "string",
+          "default": "You are Agent A in generator mode. Read {{taskFile}}, {{reviewFile}}, and write a generation receipt to {{outputFile}} after updating workspace files.",
+          "description": "Prompt template for Agent A generate stages."
+        },
+        "dualAgent.agentA.reviewPrompt": {
+          "type": "string",
+          "default": "You are Agent A in reviewer mode. Review the latest generation output and workspace changes, then write structured review JSON to {{outputFile}}.",
+          "description": "Prompt template for Agent A review stages."
+        },
+        "dualAgent.agentB.name": {
+          "type": "string",
+          "default": "Agent B",
+          "description": "Display name for Agent B."
+        },
+        "dualAgent.agentB.commandTemplate": {
+          "type": "string",
+          "default": "echo Configure dualAgent.agentB.commandTemplate to run your CLI with {{promptFile}} and write {{outputFile}}",
+          "description": "Command template for Agent B. Supports placeholders like {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
+        },
+        "dualAgent.agentB.generatePrompt": {
+          "type": "string",
+          "default": "You are Agent B in generator mode. Read {{taskFile}}, {{reviewFile}}, and write a generation receipt to {{outputFile}} after updating workspace files.",
+          "description": "Prompt template for Agent B generate stages."
+        },
+        "dualAgent.agentB.reviewPrompt": {
+          "type": "string",
+          "default": "You are Agent B in reviewer mode. Review the latest generation output and workspace changes, then write structured review JSON to {{outputFile}}.",
+          "description": "Prompt template for Agent B review stages."
+        },
+        "dualAgent.runtime.directory": {
+          "type": "string",
+          "default": ".vscode/dual-agent",
+          "description": "Workspace-relative runtime directory."
+        },
+        "dualAgent.runtime.invalidOutputRetries": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "description": "How many invalid output writes are tolerated before failing the stage."
+        },
+        "dualAgent.runtime.watchDebounceMs": {
+          "type": "number",
+          "default": 200,
+          "minimum": 0,
+          "description": "Debounce for file watcher stage completion handling."
+        },
+        "dualAgent.runtime.logLevel": {
+          "type": "string",
+          "enum": [
+            "info",
+            "debug"
+          ],
+          "default": "info",
+          "description": "Log verbosity for session.log."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "typecheck": "tsc -p . --noEmit",
+    "test": "vitest run",
+    "package:vsix": "vsce package"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.6.0",
+    "@types/node": "^24.0.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}
