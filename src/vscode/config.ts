@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 
-import type { AgentId, RuntimePaths, StageDefinition, WorkflowFileConfig } from "../core/types";
+import { DEFAULT_AGENT_A, DEFAULT_AGENT_B, DEFAULT_STAGES } from "../core/defaults";
+import type { AgentId, StageDefinition, WorkflowFileConfig } from "../core/types";
 
 export interface AgentSettings {
   id: AgentId;
@@ -32,13 +33,6 @@ export interface ExtensionSettings {
   runtime: RuntimeSettings;
   agents: Record<AgentId, AgentSettings>;
 }
-
-const DEFAULT_STAGES: StageDefinition[] = [
-  { id: "agent_a_generate", actor: "agent_a", mode: "generate" },
-  { id: "agent_b_review", actor: "agent_b", mode: "review" },
-  { id: "agent_b_generate", actor: "agent_b", mode: "generate" },
-  { id: "agent_a_review", actor: "agent_a", mode: "review" }
-];
 
 function sanitizeStages(value: unknown): StageDefinition[] {
   if (!Array.isArray(value)) {
@@ -94,38 +88,26 @@ export function getExtensionSettings(): ExtensionSettings {
     agents: {
       agent_a: {
         id: "agent_a",
-        name: config.get<string>("agentA.name", "Agent A"),
+        name: config.get<string>("agentA.name", DEFAULT_AGENT_A.name),
         commandTemplate: config.get<string>(
           "agentA.commandTemplate",
-          "echo Configure dualAgent.agentA.commandTemplate to run your CLI with {{promptFile}} and write {{outputFile}}"
+          DEFAULT_AGENT_A.commandTemplate
         ),
         prompts: {
-          generate: config.get<string>(
-            "agentA.generatePrompt",
-            "You are Agent A in generator mode. Read {{taskFile}}, {{reviewFile}}, and write a generation receipt to {{outputFile}} after updating workspace files."
-          ),
-          review: config.get<string>(
-            "agentA.reviewPrompt",
-            "You are Agent A in reviewer mode. Review the latest generation output and workspace changes, then write structured review JSON to {{outputFile}}."
-          )
+          generate: config.get<string>("agentA.generatePrompt", DEFAULT_AGENT_A.prompts.generate),
+          review: config.get<string>("agentA.reviewPrompt", DEFAULT_AGENT_A.prompts.review)
         }
       },
       agent_b: {
         id: "agent_b",
-        name: config.get<string>("agentB.name", "Agent B"),
+        name: config.get<string>("agentB.name", DEFAULT_AGENT_B.name),
         commandTemplate: config.get<string>(
           "agentB.commandTemplate",
-          "echo Configure dualAgent.agentB.commandTemplate to run your CLI with {{promptFile}} and write {{outputFile}}"
+          DEFAULT_AGENT_B.commandTemplate
         ),
         prompts: {
-          generate: config.get<string>(
-            "agentB.generatePrompt",
-            "You are Agent B in generator mode. Read {{taskFile}}, {{reviewFile}}, and write a generation receipt to {{outputFile}} after updating workspace files."
-          ),
-          review: config.get<string>(
-            "agentB.reviewPrompt",
-            "You are Agent B in reviewer mode. Review the latest generation output and workspace changes, then write structured review JSON to {{outputFile}}."
-          )
+          generate: config.get<string>("agentB.generatePrompt", DEFAULT_AGENT_B.prompts.generate),
+          review: config.get<string>("agentB.reviewPrompt", DEFAULT_AGENT_B.prompts.review)
         }
       }
     }

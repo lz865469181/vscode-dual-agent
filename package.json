@@ -2,7 +2,7 @@
   "name": "dual-agent-vscode",
   "displayName": "Dual Agent Workflow",
   "description": "VS Code extension for deterministic dual-agent code generation and review workflows.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "local",
   "private": true,
   "license": "UNLICENSED",
@@ -129,42 +129,42 @@
         },
         "dualAgent.agentA.name": {
           "type": "string",
-          "default": "Agent A",
+          "default": "Claude",
           "description": "Display name for Agent A."
         },
         "dualAgent.agentA.commandTemplate": {
           "type": "string",
-          "default": "echo Configure dualAgent.agentA.commandTemplate to run your CLI with {{promptFile}} and write {{outputFile}}",
+          "default": "Get-Content -Raw \"{{promptFile}}\" | claude",
           "description": "Command template for Agent A. Supports placeholders like {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
         },
         "dualAgent.agentA.generatePrompt": {
           "type": "string",
-          "default": "You are Agent A in generator mode. Read {{taskFile}}, {{reviewFile}}, and write a generation receipt to {{outputFile}} after updating workspace files.",
+          "default": "You are Claude in generator mode.\n\n- Read {{taskFile}} and {{stateFile}}.\n- If {{reviewFile}} contains issues, apply all requested fixes directly in the workspace.\n- Do not review. Modify the real project files in {{workspaceFolder}}.\n- When finished, write JSON to {{outputFile}} using this shape:\n{ \"type\": \"code_generation\", \"author\": \"agent_a\", \"changedFiles\": [\"relative/path\"], \"summary\": \"...\", \"notes\": \"optional\" }",
           "description": "Prompt template for Agent A generate stages."
         },
         "dualAgent.agentA.reviewPrompt": {
           "type": "string",
-          "default": "You are Agent A in reviewer mode. Review the latest generation output and workspace changes, then write structured review JSON to {{outputFile}}.",
+          "default": "You are Claude in reviewer mode.\n\n- Read the latest workspace changes and the other agent output artifacts.\n- Review Codex output strictly.\n- Do not generate code.\n- Write review JSON to {{outputFile}} using this shape:\n{ \"type\": \"review\", \"reviewer\": \"agent_a\", \"target\": \"agent_b\", \"issues\": [{ \"severity\": \"high\", \"file\": \"path\", \"problem\": \"...\", \"fix\": \"...\" }], \"summary\": \"Approved or Needs fixes\" }",
           "description": "Prompt template for Agent A review stages."
         },
         "dualAgent.agentB.name": {
           "type": "string",
-          "default": "Agent B",
+          "default": "Codex",
           "description": "Display name for Agent B."
         },
         "dualAgent.agentB.commandTemplate": {
           "type": "string",
-          "default": "echo Configure dualAgent.agentB.commandTemplate to run your CLI with {{promptFile}} and write {{outputFile}}",
+          "default": "Get-Content -Raw \"{{promptFile}}\" | codex",
           "description": "Command template for Agent B. Supports placeholders like {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
         },
         "dualAgent.agentB.generatePrompt": {
           "type": "string",
-          "default": "You are Agent B in generator mode. Read {{taskFile}}, {{reviewFile}}, and write a generation receipt to {{outputFile}} after updating workspace files.",
+          "default": "You are Codex in generator mode.\n\n- Read {{taskFile}}, {{reviewFile}}, and {{stateFile}}.\n- Apply all fixes directly in the workspace at {{workspaceFolder}}.\n- Do not review.\n- When finished, write JSON to {{outputFile}} using this shape:\n{ \"type\": \"code_generation\", \"author\": \"agent_b\", \"changedFiles\": [\"relative/path\"], \"summary\": \"...\", \"notes\": \"optional\" }",
           "description": "Prompt template for Agent B generate stages."
         },
         "dualAgent.agentB.reviewPrompt": {
           "type": "string",
-          "default": "You are Agent B in reviewer mode. Review the latest generation output and workspace changes, then write structured review JSON to {{outputFile}}.",
+          "default": "You are Codex in reviewer mode.\n\n- Read the latest workspace changes and Claude output artifacts.\n- Output structured review issues only.\n- Do not generate code.\n- Write review JSON to {{outputFile}} using this shape:\n{ \"type\": \"review\", \"reviewer\": \"agent_b\", \"target\": \"agent_a\", \"issues\": [{ \"severity\": \"high\", \"file\": \"path\", \"problem\": \"...\", \"fix\": \"...\" }], \"summary\": \"Approved or Needs fixes\" }",
           "description": "Prompt template for Agent B review stages."
         },
         "dualAgent.runtime.directory": {

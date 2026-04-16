@@ -4,7 +4,7 @@
 
 ## Features
 
-- Fixed `Agent A` and `Agent B` model with configurable CLI command templates
+- Built-in `Claude ↔ Codex` preset, still editable through settings
 - Sidebar sections for session state, agent bindings, runtime artifacts, and actions
 - File-driven workflow state machine with integrated-terminal execution
 - Runtime prompts and outputs stored in `.vscode/dual-agent/`
@@ -32,7 +32,14 @@ npm run package:vsix
 
 ## Configuration
 
-Configure the two agents through VS Code settings:
+The extension now ships with a default preset:
+
+- `Agent A = Claude`
+- `Agent B = Codex`
+- `dualAgent.agentA.commandTemplate = Get-Content -Raw "{{promptFile}}" | claude`
+- `dualAgent.agentB.commandTemplate = Get-Content -Raw "{{promptFile}}" | codex`
+
+You can still override everything through VS Code settings:
 
 - `dualAgent.agentA.commandTemplate`
 - `dualAgent.agentB.commandTemplate`
