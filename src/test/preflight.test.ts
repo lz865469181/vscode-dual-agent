@@ -10,7 +10,7 @@ describe("preflight command template classification", () => {
   });
 
   it("accepts current cross-platform templates", () => {
-    const current = classifyCommandTemplate("claude -p --dangerously-skip-permissions {{prompt}}");
+    const current = classifyCommandTemplate("builtin:claude");
 
     expect(current.kind).toBe("ok");
 

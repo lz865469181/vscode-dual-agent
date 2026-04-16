@@ -10,6 +10,10 @@ import type { AgentId } from "../core/types";
 import type { ExtensionSettings } from "./config";
 
 const execFileAsync = promisify(execFile);
+const BUILTIN_EXECUTABLES: Record<string, string> = {
+  "builtin:claude": "claude",
+  "builtin:codex": "codex"
+};
 
 export interface PreflightIssue {
   agentId: AgentId;
@@ -28,6 +32,11 @@ const LEGACY_PREFIXES = ["Get-Content -Raw", "cat "];
 
 export function classifyCommandTemplate(commandTemplate: string): CommandTemplateClassification {
   const trimmed = commandTemplate.trim();
+
+  const builtinExecutable = BUILTIN_EXECUTABLES[trimmed];
+  if (builtinExecutable) {
+    return { kind: "ok", executable: builtinExecutable };
+  }
 
   if (LEGACY_PREFIXES.some((prefix) => trimmed.startsWith(prefix)) && trimmed.includes("|")) {
     return { kind: "legacy_template" };

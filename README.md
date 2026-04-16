@@ -37,8 +37,8 @@ The extension now ships with a default preset:
 
 - `Agent A = Claude`
 - `Agent B = Codex`
-- `dualAgent.agentA.commandTemplate = claude -p --dangerously-skip-permissions {{prompt}}`
-- `dualAgent.agentB.commandTemplate = codex exec --full-auto -C "{{workspaceFolder}}" {{prompt}}`
+- `dualAgent.agentA.commandTemplate = builtin:claude`
+- `dualAgent.agentB.commandTemplate = builtin:codex`
 
 You can still override everything through VS Code settings:
 
@@ -49,6 +49,8 @@ You can still override everything through VS Code settings:
 - `dualAgent.agentB.generatePrompt`
 - `dualAgent.agentB.reviewPrompt`
 
-Command templates support placeholders such as `{{prompt}}`, `{{promptFile}}`, `{{outputFile}}`, `{{workspaceFolder}}`, `{{runtimeDir}}`, `{{taskFile}}`, and `{{reviewFile}}`.
+`builtin:claude` and `builtin:codex` use the extension's built-in cross-platform wrappers that read `.vscode/dual-agent/prompts/...` safely for PowerShell and POSIX shells.
+
+Custom command templates support placeholders such as `{{prompt}}`, `{{promptFile}}`, `{{outputFile}}`, `{{workspaceFolder}}`, `{{runtimeDir}}`, `{{taskFile}}`, and `{{reviewFile}}`.
 
 If you previously used the old PowerShell-only pipeline templates, run `Dual Agent: Repair Legacy Command Templates` once to replace them with the current cross-platform defaults.

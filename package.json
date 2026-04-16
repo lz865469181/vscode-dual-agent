@@ -2,7 +2,7 @@
   "name": "dual-agent-vscode",
   "displayName": "Dual Agent Workflow",
   "description": "VS Code extension for deterministic dual-agent code generation and review workflows.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "local",
   "private": true,
   "license": "UNLICENSED",
@@ -138,8 +138,8 @@
         },
         "dualAgent.agentA.commandTemplate": {
           "type": "string",
-          "default": "claude -p --dangerously-skip-permissions {{prompt}}",
-          "description": "Command template for Agent A. Supports placeholders like {{prompt}}, {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
+          "default": "builtin:claude",
+          "description": "Command template for Agent A. Use builtin:claude for the built-in cross-platform wrapper, or provide a custom template with placeholders like {{prompt}}, {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
         },
         "dualAgent.agentA.generatePrompt": {
           "type": "string",
@@ -158,8 +158,8 @@
         },
         "dualAgent.agentB.commandTemplate": {
           "type": "string",
-          "default": "codex exec --full-auto -C \"{{workspaceFolder}}\" {{prompt}}",
-          "description": "Command template for Agent B. Supports placeholders like {{prompt}}, {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
+          "default": "builtin:codex",
+          "description": "Command template for Agent B. Use builtin:codex for the built-in cross-platform wrapper, or provide a custom template with placeholders like {{prompt}}, {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
         },
         "dualAgent.agentB.generatePrompt": {
           "type": "string",

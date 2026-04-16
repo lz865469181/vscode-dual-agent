@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { escapeForShell } from "../core/command-template";
+import { escapeForShell, type SupportedPlatform } from "../core/command-template";
 import { parseGenerationOutput, parseReviewOutput } from "../core/protocol";
 import { renderTemplate } from "../core/templates";
 import type { AgentOutput, RuntimePaths, StageDefinition } from "../core/types";
@@ -62,7 +62,11 @@ export class CliAgentAdapter {
     return stage.mode === "review" ? parseReviewOutput(raw) : parseGenerationOutput(raw);
   }
 
-  private createCommandTemplateValues(stage: StageDefinition, prompt = ""): StageTemplateValues {
+  private createCommandTemplateValues(
+    stage: StageDefinition,
+    prompt = "",
+    platform: SupportedPlatform = process.platform
+  ): StageTemplateValues {
     const promptFile = this.getPromptFile(stage);
     const outputFile = this.getExpectedOutputFile(stage);
 
@@ -74,7 +78,7 @@ export class CliAgentAdapter {
       reviewFile: this.paths.reviewFile,
       outputFile,
       promptFile,
-      prompt: escapeForShell(prompt)
+      prompt: escapeForShell(prompt, platform)
     };
   }
 
@@ -99,7 +103,51 @@ export class CliAgentAdapter {
     return relative.length > 0 ? relative : ".";
   }
 
-  buildCommandWithPrompt(stage: StageDefinition, prompt: string): string {
-    return renderTemplate(this.settings.commandTemplate, toTemplateRecord(this.createCommandTemplateValues(stage, prompt)));
+  buildCommandWithPrompt(stage: StageDefinition, prompt: string, platform: SupportedPlatform = process.platform): string {
+    if (this.settings.commandTemplate === "builtin:claude") {
+      return this.buildBuiltinClaudeCommand(stage, platform);
+    }
+
+    if (this.settings.commandTemplate === "builtin:codex") {
+      return this.buildBuiltinCodexCommand(stage, platform);
+    }
+
+    return renderTemplate(
+      this.settings.commandTemplate,
+      toTemplateRecord(this.createCommandTemplateValues(stage, prompt, platform))
+    );
+  }
+
+  private buildBuiltinClaudeCommand(stage: StageDefinition, platform: SupportedPlatform): string {
+    const promptFile = this.toWorkspaceRelative(this.getPromptFile(stage));
+
+    if (platform === "win32") {
+      return [
+        `$dualAgentPrompt = Get-Content -Raw '${promptFile}'`,
+        "claude -p --dangerously-skip-permissions $dualAgentPrompt"
+      ].join("\n");
+    }
+
+    return [
+      `DUAL_AGENT_PROMPT="$(cat '${promptFile}')"`,
+      'claude -p --dangerously-skip-permissions "$DUAL_AGENT_PROMPT"'
+    ].join("\n");
+  }
+
+  private buildBuiltinCodexCommand(stage: StageDefinition, platform: SupportedPlatform): string {
+    const promptFile = this.toWorkspaceRelative(this.getPromptFile(stage));
+    const workspaceFolder = this.workspaceRoot.replace(/\\/g, "/");
+
+    if (platform === "win32") {
+      return [
+        `$dualAgentPrompt = Get-Content -Raw '${promptFile}'`,
+        `codex exec --full-auto -C '${workspaceFolder}' $dualAgentPrompt`
+      ].join("\n");
+    }
+
+    return [
+      `DUAL_AGENT_PROMPT="$(cat '${promptFile}')"`,
+      `codex exec --full-auto -C '${workspaceFolder}' "$DUAL_AGENT_PROMPT"`
+    ].join("\n");
   }
 }

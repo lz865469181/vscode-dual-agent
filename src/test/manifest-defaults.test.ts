@@ -18,9 +18,7 @@ describe("extension manifest defaults", () => {
 
     expect(properties["dualAgent.agentA.name"]?.default).toBe("Claude");
     expect(properties["dualAgent.agentB.name"]?.default).toBe("Codex");
-    expect(properties["dualAgent.agentA.commandTemplate"]?.default).toBe("claude -p --dangerously-skip-permissions {{prompt}}");
-    expect(properties["dualAgent.agentB.commandTemplate"]?.default).toBe(
-      'codex exec --full-auto -C "{{workspaceFolder}}" {{prompt}}'
-    );
+    expect(properties["dualAgent.agentA.commandTemplate"]?.default).toBe("builtin:claude");
+    expect(properties["dualAgent.agentB.commandTemplate"]?.default).toBe("builtin:codex");
   });
 });
