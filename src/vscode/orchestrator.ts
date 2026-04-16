@@ -4,6 +4,7 @@ import { advanceWorkflow } from "../core/transitions";
 import type { AgentId, FailureReason, StageDefinition, WorkflowState } from "../core/types";
 import { CliAgentAdapter } from "./cli-adapter";
 import { getActiveStage, getExtensionSettings, getWorkspaceRoot, type ExtensionSettings } from "./config";
+import { runAgentPreflight } from "./preflight";
 import { RuntimeStore } from "./runtime-store";
 
 interface SidebarSectionItem {
@@ -66,6 +67,11 @@ export class DualAgentOrchestrator implements vscode.Disposable {
   async startWorkflow(): Promise<void> {
     try {
       const settings = getExtensionSettings();
+      const preflightIssues = await runAgentPreflight(settings);
+      if (preflightIssues.length > 0) {
+        await this.showPreflightIssues(preflightIssues);
+        return;
+      }
       const store = this.createStore(settings);
       const initialState = createInitialState(settings);
 
@@ -262,6 +268,11 @@ export class DualAgentOrchestrator implements vscode.Disposable {
 
   private async runActiveStage(): Promise<void> {
     const settings = getExtensionSettings();
+    const preflightIssues = await runAgentPreflight(settings);
+    if (preflightIssues.length > 0) {
+      await this.showPreflightIssues(preflightIssues);
+      return;
+    }
     const store = this.createStore(settings);
     const state = await store.readState();
 
@@ -278,7 +289,7 @@ export class DualAgentOrchestrator implements vscode.Disposable {
     const adapter = this.getAdapter(stage, settings, store);
     const promptFile = adapter.getPromptFile(stage);
     const prompt = adapter.buildPrompt(stage);
-    const command = adapter.buildCommand(stage);
+    const command = adapter.buildCommandWithPrompt(stage, prompt);
     const outputFile = adapter.getExpectedOutputFile(stage);
     const startedAt = new Date().toISOString();
     const runningState: WorkflowState = {
@@ -439,5 +450,17 @@ export class DualAgentOrchestrator implements vscode.Disposable {
   private showError(error: unknown): void {
     const message = error instanceof Error ? error.message : "Unknown Dual Agent error";
     void vscode.window.showErrorMessage(message);
+  }
+
+  private async showPreflightIssues(issues: Awaited<ReturnType<typeof runAgentPreflight>>): Promise<void> {
+    const details = issues
+      .map((issue) =>
+        issue.reason === "missing_executable"
+          ? `${issue.agentName}: executable not found (${issue.executable})`
+          : `${issue.agentName}: could not infer executable from command template`
+      )
+      .join("; ");
+
+    await vscode.window.showErrorMessage(`Dual Agent preflight failed: ${details}`);
   }
 }

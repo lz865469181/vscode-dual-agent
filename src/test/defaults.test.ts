@@ -22,10 +22,11 @@ describe("built-in defaults", () => {
   });
 
   it("keeps prompt and command defaults wired to runtime files", () => {
-    expect(DEFAULT_AGENT_A.commandTemplate).toContain("Get-Content -Raw");
     expect(DEFAULT_AGENT_A.commandTemplate).toContain("claude -p");
-    expect(DEFAULT_AGENT_A.commandTemplate).toContain("{{promptFile}}");
+    expect(DEFAULT_AGENT_A.commandTemplate).toContain("{{prompt}}");
     expect(DEFAULT_AGENT_B.commandTemplate).toContain("codex exec --full-auto");
+    expect(DEFAULT_AGENT_B.commandTemplate).toContain("{{prompt}}");
+    expect(DEFAULT_AGENT_A.commandTemplate).toContain("claude -p");
     expect(DEFAULT_AGENT_A.prompts.generate).toContain("{{outputFile}}");
     expect(DEFAULT_AGENT_B.prompts.review).toContain("{{outputFile}}");
   });

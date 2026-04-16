@@ -49,7 +49,7 @@ const CODEX_REVIEW_PROMPT = [
 
 export const DEFAULT_AGENT_A = {
   name: "Claude",
-  commandTemplate: 'Get-Content -Raw "{{promptFile}}" | claude -p --dangerously-skip-permissions',
+  commandTemplate: "claude -p --dangerously-skip-permissions {{prompt}}",
   prompts: {
     generate: CLAUDE_GENERATE_PROMPT,
     review: CLAUDE_REVIEW_PROMPT
@@ -58,7 +58,7 @@ export const DEFAULT_AGENT_A = {
 
 export const DEFAULT_AGENT_B = {
   name: "Codex",
-  commandTemplate: 'Get-Content -Raw "{{promptFile}}" | codex exec --full-auto -C "{{workspaceFolder}}" -',
+  commandTemplate: 'codex exec --full-auto -C "{{workspaceFolder}}" {{prompt}}',
   prompts: {
     generate: CODEX_GENERATE_PROMPT,
     review: CODEX_REVIEW_PROMPT

@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import { escapeForShell } from "../core/command-template";
 import { parseGenerationOutput, parseReviewOutput } from "../core/protocol";
 import { renderTemplate } from "../core/templates";
 import type { AgentOutput, RuntimePaths, StageDefinition } from "../core/types";
@@ -13,6 +14,7 @@ export interface StageTemplateValues {
   reviewFile: string;
   outputFile: string;
   promptFile: string;
+  prompt: string;
 }
 
 function toTemplateRecord(values: StageTemplateValues): Record<string, string> {
@@ -23,7 +25,8 @@ function toTemplateRecord(values: StageTemplateValues): Record<string, string> {
     stateFile: values.stateFile,
     reviewFile: values.reviewFile,
     outputFile: values.outputFile,
-    promptFile: values.promptFile
+    promptFile: values.promptFile,
+    prompt: values.prompt
   };
 }
 
@@ -55,15 +58,11 @@ export class CliAgentAdapter {
     return renderTemplate(template, toTemplateRecord(this.createTemplateValues(stage)));
   }
 
-  buildCommand(stage: StageDefinition): string {
-    return renderTemplate(this.settings.commandTemplate, toTemplateRecord(this.createTemplateValues(stage)));
-  }
-
   parseOutput(stage: StageDefinition, raw: string): AgentOutput {
     return stage.mode === "review" ? parseReviewOutput(raw) : parseGenerationOutput(raw);
   }
 
-  private createTemplateValues(stage: StageDefinition): StageTemplateValues {
+  private createTemplateValues(stage: StageDefinition, prompt = ""): StageTemplateValues {
     const promptFile = this.getPromptFile(stage);
     const outputFile = this.getExpectedOutputFile(stage);
 
@@ -74,7 +73,12 @@ export class CliAgentAdapter {
       stateFile: this.paths.stateFile,
       reviewFile: this.paths.reviewFile,
       outputFile,
-      promptFile
+      promptFile,
+      prompt: escapeForShell(prompt)
     };
+  }
+
+  buildCommandWithPrompt(stage: StageDefinition, prompt: string): string {
+    return renderTemplate(this.settings.commandTemplate, toTemplateRecord(this.createTemplateValues(stage, prompt)));
   }
 }

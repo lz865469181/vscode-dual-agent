@@ -7,6 +7,7 @@
 - Built-in `Claude ↔ Codex` preset, still editable through settings
 - Sidebar sections for session state, agent bindings, runtime artifacts, and actions
 - File-driven workflow state machine with integrated-terminal execution
+- Startup preflight that checks configured agent CLIs before a workflow begins
 - Runtime prompts and outputs stored in `.vscode/dual-agent/`
 
 ## Runtime Files
@@ -36,8 +37,8 @@ The extension now ships with a default preset:
 
 - `Agent A = Claude`
 - `Agent B = Codex`
-- `dualAgent.agentA.commandTemplate = Get-Content -Raw "{{promptFile}}" | claude -p --dangerously-skip-permissions`
-- `dualAgent.agentB.commandTemplate = Get-Content -Raw "{{promptFile}}" | codex exec --full-auto -C "{{workspaceFolder}}" -`
+- `dualAgent.agentA.commandTemplate = claude -p --dangerously-skip-permissions {{prompt}}`
+- `dualAgent.agentB.commandTemplate = codex exec --full-auto -C "{{workspaceFolder}}" {{prompt}}`
 
 You can still override everything through VS Code settings:
 
@@ -48,4 +49,4 @@ You can still override everything through VS Code settings:
 - `dualAgent.agentB.generatePrompt`
 - `dualAgent.agentB.reviewPrompt`
 
-Command templates support placeholders such as `{{promptFile}}`, `{{outputFile}}`, `{{workspaceFolder}}`, `{{runtimeDir}}`, `{{taskFile}}`, and `{{reviewFile}}`.
+Command templates support placeholders such as `{{prompt}}`, `{{promptFile}}`, `{{outputFile}}`, `{{workspaceFolder}}`, `{{runtimeDir}}`, `{{taskFile}}`, and `{{reviewFile}}`.
