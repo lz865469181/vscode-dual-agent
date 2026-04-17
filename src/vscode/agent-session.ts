@@ -2,6 +2,7 @@ import * as pty from "node-pty";
 
 import type { AgentId } from "../core/types";
 import type { AgentLaunchConfig } from "./cli-adapter";
+import { resolveLaunchExecutable } from "./launch-resolution";
 
 export type AgentSessionStatus =
   | "not_started"
@@ -75,7 +76,7 @@ export class AgentSession {
     this.status = "starting";
 
     try {
-      this.process = this.options.createProcess?.() ?? this.createDefaultProcess();
+      this.process = this.options.createProcess?.() ?? (await this.createDefaultProcess());
 
       this.subscriptions.push(
         this.process.onData((data) => {
@@ -147,8 +148,9 @@ export class AgentSession {
     };
   }
 
-  private createDefaultProcess(): PtyProcess {
-    const ptyProcess = pty.spawn(this.options.launch.executable, this.options.launch.args, {
+  private async createDefaultProcess(): Promise<PtyProcess> {
+    const executable = await resolveLaunchExecutable(this.options.launch.executable);
+    const ptyProcess = pty.spawn(executable, this.options.launch.args, {
       name: "xterm-256color",
       cols: 120,
       rows: 30,

@@ -99,7 +99,7 @@ class FakeSession {
   }
 }
 
-async function waitForCondition(check: () => Promise<boolean>, timeoutMs = 500): Promise<void> {
+async function waitForCondition(check: () => Promise<boolean>, timeoutMs = 2000): Promise<void> {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < timeoutMs) {

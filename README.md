@@ -78,6 +78,8 @@ Legacy `commandTemplate` settings are still present only for migration compatibi
 
 Before a workflow starts, the extension checks that the configured executables exist. If `claude` or `codex` are not on `PATH`, update the corresponding `dualAgent.agentA.executable` or `dualAgent.agentB.executable` setting.
 
+On Windows, the extension also resolves bare command names such as `claude` or `codex` to concrete launch targets like `.exe` or `.cmd` before starting the PTY session. This avoids `File not found` failures from `node-pty` when the command exists on `PATH` but cannot be launched by name inside a PTY.
+
 ## Development
 
 ```bash
