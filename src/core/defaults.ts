@@ -49,6 +49,9 @@ const CODEX_REVIEW_PROMPT = [
 
 export const DEFAULT_AGENT_A = {
   name: "Claude",
+  mode: "interactive",
+  executable: "claude",
+  args: [],
   commandTemplate: "builtin:claude",
   prompts: {
     generate: CLAUDE_GENERATE_PROMPT,
@@ -58,6 +61,9 @@ export const DEFAULT_AGENT_A = {
 
 export const DEFAULT_AGENT_B = {
   name: "Codex",
+  mode: "interactive",
+  executable: "codex",
+  args: [],
   commandTemplate: "builtin:codex",
   prompts: {
     generate: CODEX_GENERATE_PROMPT,

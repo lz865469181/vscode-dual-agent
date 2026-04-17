@@ -6,6 +6,18 @@ import { renderTemplate } from "../core/templates";
 import type { AgentOutput, RuntimePaths, StageDefinition } from "../core/types";
 import type { AgentSettings } from "./config";
 
+export interface AgentLaunchConfig {
+  executable: string;
+  args: string[];
+  env?: Record<string, string>;
+}
+
+export interface StageExecutionEnvelope {
+  workflowId: string;
+  stageId: string;
+  sentinel: string;
+}
+
 export interface StageTemplateValues {
   workspaceFolder: string;
   runtimeDir: string;
@@ -60,6 +72,25 @@ export class CliAgentAdapter {
 
   parseOutput(stage: StageDefinition, raw: string): AgentOutput {
     return stage.mode === "review" ? parseReviewOutput(raw) : parseGenerationOutput(raw);
+  }
+
+  getLaunchConfig(): AgentLaunchConfig {
+    return {
+      executable: this.settings.executable,
+      args: [...this.settings.args]
+    };
+  }
+
+  buildInteractivePrompt(stage: StageDefinition, envelope: StageExecutionEnvelope): string {
+    return [
+      `Workflow: ${envelope.workflowId}`,
+      `Stage: ${envelope.stageId}`,
+      "",
+      "After writing the required JSON artifact, print this sentinel line exactly once on its own line:",
+      envelope.sentinel,
+      "",
+      this.buildPrompt(stage)
+    ].join("\n");
   }
 
   private createCommandTemplateValues(

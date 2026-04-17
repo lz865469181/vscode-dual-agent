@@ -7,6 +7,9 @@ import { classifyCommandTemplate } from "./preflight";
 export interface AgentSettings {
   id: AgentId;
   name: string;
+  mode: "interactive";
+  executable: string;
+  args: string[];
   commandTemplate: string;
   prompts: {
     generate: string;
@@ -90,6 +93,9 @@ export function getExtensionSettings(): ExtensionSettings {
       agent_a: {
         id: "agent_a",
         name: config.get<string>("agentA.name", DEFAULT_AGENT_A.name),
+        mode: "interactive",
+        executable: config.get<string>("agentA.executable", DEFAULT_AGENT_A.executable),
+        args: config.get<string[]>("agentA.args", [...DEFAULT_AGENT_A.args]),
         commandTemplate: config.get<string>(
           "agentA.commandTemplate",
           DEFAULT_AGENT_A.commandTemplate
@@ -102,6 +108,9 @@ export function getExtensionSettings(): ExtensionSettings {
       agent_b: {
         id: "agent_b",
         name: config.get<string>("agentB.name", DEFAULT_AGENT_B.name),
+        mode: "interactive",
+        executable: config.get<string>("agentB.executable", DEFAULT_AGENT_B.executable),
+        args: config.get<string[]>("agentB.args", [...DEFAULT_AGENT_B.args]),
         commandTemplate: config.get<string>(
           "agentB.commandTemplate",
           DEFAULT_AGENT_B.commandTemplate

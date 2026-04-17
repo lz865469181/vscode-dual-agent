@@ -22,8 +22,12 @@ describe("built-in defaults", () => {
   });
 
   it("keeps prompt and command defaults wired to runtime files", () => {
-    expect(DEFAULT_AGENT_A.commandTemplate).toBe("builtin:claude");
-    expect(DEFAULT_AGENT_B.commandTemplate).toBe("builtin:codex");
+    expect(DEFAULT_AGENT_A.mode).toBe("interactive");
+    expect(DEFAULT_AGENT_B.mode).toBe("interactive");
+    expect(DEFAULT_AGENT_A.executable).toBe("claude");
+    expect(DEFAULT_AGENT_B.executable).toBe("codex");
+    expect(DEFAULT_AGENT_A.args).toEqual([]);
+    expect(DEFAULT_AGENT_B.args).toEqual([]);
     expect(DEFAULT_AGENT_A.prompts.generate).toContain("{{outputFile}}");
     expect(DEFAULT_AGENT_B.prompts.review).toContain("{{outputFile}}");
   });

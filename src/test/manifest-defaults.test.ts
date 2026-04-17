@@ -18,7 +18,9 @@ describe("extension manifest defaults", () => {
 
     expect(properties["dualAgent.agentA.name"]?.default).toBe("Claude");
     expect(properties["dualAgent.agentB.name"]?.default).toBe("Codex");
-    expect(properties["dualAgent.agentA.commandTemplate"]?.default).toBe("builtin:claude");
-    expect(properties["dualAgent.agentB.commandTemplate"]?.default).toBe("builtin:codex");
+    expect(properties["dualAgent.agentA.mode"]?.default).toBe("interactive");
+    expect(properties["dualAgent.agentB.mode"]?.default).toBe("interactive");
+    expect(properties["dualAgent.agentA.executable"]?.default).toBe("claude");
+    expect(properties["dualAgent.agentB.executable"]?.default).toBe("codex");
   });
 });

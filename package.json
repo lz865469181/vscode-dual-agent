@@ -136,10 +136,31 @@
           "default": "Claude",
           "description": "Display name for Agent A."
         },
+        "dualAgent.agentA.mode": {
+          "type": "string",
+          "enum": [
+            "interactive"
+          ],
+          "default": "interactive",
+          "description": "Execution mode for Agent A."
+        },
+        "dualAgent.agentA.executable": {
+          "type": "string",
+          "default": "claude",
+          "description": "Executable used to launch Agent A in interactive mode."
+        },
+        "dualAgent.agentA.args": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Arguments used to launch Agent A in interactive mode."
+        },
         "dualAgent.agentA.commandTemplate": {
           "type": "string",
           "default": "builtin:claude",
-          "description": "Command template for Agent A. Use builtin:claude for the built-in cross-platform wrapper, or provide a custom template with placeholders like {{prompt}}, {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
+          "description": "Legacy one-shot command template for Agent A. Kept for migration compatibility."
         },
         "dualAgent.agentA.generatePrompt": {
           "type": "string",
@@ -156,10 +177,31 @@
           "default": "Codex",
           "description": "Display name for Agent B."
         },
+        "dualAgent.agentB.mode": {
+          "type": "string",
+          "enum": [
+            "interactive"
+          ],
+          "default": "interactive",
+          "description": "Execution mode for Agent B."
+        },
+        "dualAgent.agentB.executable": {
+          "type": "string",
+          "default": "codex",
+          "description": "Executable used to launch Agent B in interactive mode."
+        },
+        "dualAgent.agentB.args": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Arguments used to launch Agent B in interactive mode."
+        },
         "dualAgent.agentB.commandTemplate": {
           "type": "string",
           "default": "builtin:codex",
-          "description": "Command template for Agent B. Use builtin:codex for the built-in cross-platform wrapper, or provide a custom template with placeholders like {{prompt}}, {{promptFile}}, {{outputFile}}, {{workspaceFolder}} and {{runtimeDir}}."
+          "description": "Legacy one-shot command template for Agent B. Kept for migration compatibility."
         },
         "dualAgent.agentB.generatePrompt": {
           "type": "string",

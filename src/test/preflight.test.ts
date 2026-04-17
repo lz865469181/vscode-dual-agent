@@ -3,6 +3,18 @@ import { describe, expect, it } from "vitest";
 import { classifyCommandTemplate } from "../vscode/preflight";
 
 describe("preflight command template classification", () => {
+  it("treats interactive executables as valid agent config", () => {
+    const current = classifyCommandTemplate("claude");
+
+    expect(current.kind).toBe("ok");
+
+    if (current.kind !== "ok") {
+      throw new Error("Expected an executable classification");
+    }
+
+    expect(current.executable).toBe("claude");
+  });
+
   it("marks old powershell pipeline templates as legacy", () => {
     const legacy = classifyCommandTemplate('Get-Content -Raw "{{promptFile}}" | claude');
 
