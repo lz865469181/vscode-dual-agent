@@ -2,7 +2,7 @@
   "name": "dual-agent-vscode",
   "displayName": "Dual Agent Workflow",
   "description": "VS Code extension for deterministic dual-agent code generation and review workflows.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "local",
   "private": true,
   "license": "UNLICENSED",
@@ -249,10 +249,13 @@
     "package:vsix": "vsce package"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.6.0",
     "@types/node": "^24.0.0",
     "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.6.0",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"
+  },
+  "dependencies": {
+    "node-pty": "^1.1.0"
   }
 }

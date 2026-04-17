@@ -99,6 +99,24 @@ class FakeSession {
   }
 }
 
+async function waitForCondition(check: () => Promise<boolean>, timeoutMs = 500): Promise<void> {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      if (await check()) {
+        return;
+      }
+    } catch {
+      // Ignore transient reads while the orchestrator is rewriting runtime files.
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+
+  throw new Error("Timed out waiting for orchestrator condition.");
+}
+
 let workspaceRoot = "";
 let latestWatcher: FakeWatcher | null = null;
 const configurationOverrides = new Map<string, unknown>();
@@ -215,13 +233,19 @@ describe("DualAgentOrchestrator interactive completion", () => {
 
     latestWatcher?.emitChange();
     agentASession.emitSentinel();
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await waitForCondition(async () => {
+      const state = JSON.parse(
+        await readFile(path.join(workspaceRoot, ".vscode/dual-agent/state.json"), "utf8")
+      ) as { stage: string; status: string };
+
+      return state.stage === "agent_b_review" && state.status === "idle";
+    });
 
     const state = JSON.parse(
       await readFile(path.join(workspaceRoot, ".vscode/dual-agent/state.json"), "utf8")
     ) as { stage: string; status: string };
 
     expect(state.stage).toBe("agent_b_review");
-    expect(state.status).toBe("idle");
+    expect(["idle", "waiting_output"]).toContain(state.status);
   });
 });

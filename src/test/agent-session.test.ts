@@ -1,16 +1,67 @@
 import { EventEmitter } from "node:events";
-import { PassThrough } from "node:stream";
 
 import { describe, expect, it, vi } from "vitest";
 
 import type { AgentLaunchConfig } from "../vscode/cli-adapter";
 import { AgentSession } from "../vscode/agent-session";
 
-class FakeChildProcess extends EventEmitter {
-  readonly stdout = new PassThrough();
-  readonly stderr = new PassThrough();
-  readonly stdin = new PassThrough();
+class FakePtyProcess extends EventEmitter {
+  private readonly dataListeners = new Set<(data: string) => void>();
+  private readonly exitListeners = new Set<(event: { exitCode: number; signal?: number }) => void>();
+  readonly write = vi.fn();
+  readonly resize = vi.fn();
   readonly kill = vi.fn();
+
+  onData(listener: (data: string) => void): { dispose: () => void } {
+    this.dataListeners.add(listener);
+    return {
+      dispose: () => {
+        this.dataListeners.delete(listener);
+      }
+    };
+  }
+
+  onExit(listener: (event: { exitCode: number; signal?: number }) => void): { dispose: () => void } {
+    this.exitListeners.add(listener);
+    return {
+      dispose: () => {
+        this.exitListeners.delete(listener);
+      }
+    };
+  }
+
+  emitData(data: string): void {
+    for (const listener of this.dataListeners) {
+      listener(data);
+    }
+  }
+
+  emitExit(event: { exitCode: number; signal?: number }): void {
+    for (const listener of this.exitListeners) {
+      listener(event);
+    }
+  }
+}
+
+class FakeTerminalBridge {
+  private inputHandler: ((data: string) => void) | undefined;
+  private resizeHandler: ((dimensions: { columns: number; rows: number }) => void) | undefined;
+
+  attachInputHandler(handler: (data: string) => void): void {
+    this.inputHandler = handler;
+  }
+
+  attachResizeHandler(handler: (dimensions: { columns: number; rows: number }) => void): void {
+    this.resizeHandler = handler;
+  }
+
+  emitInput(data: string): void {
+    this.inputHandler?.(data);
+  }
+
+  emitResize(columns: number, rows: number): void {
+    this.resizeHandler?.({ columns, rows });
+  }
 }
 
 function createLaunch(): AgentLaunchConfig {
@@ -21,36 +72,33 @@ function createLaunch(): AgentLaunchConfig {
 }
 
 describe("AgentSession", () => {
-  it("writes prompts to stdin with a trailing newline", async () => {
-    const child = new FakeChildProcess();
-    const stdinChunks: string[] = [];
-    child.stdin.on("data", (chunk) => {
-      stdinChunks.push(chunk.toString("utf8"));
-    });
+  it("writes prompts to the PTY using bracketed paste and submit", async () => {
+    const pty = new FakePtyProcess();
 
     const session = new AgentSession({
       actor: "agent_a",
       launch: createLaunch(),
       workspaceRoot: "D:/repo",
-      spawnProcess: () => child,
+      createProcess: () => pty,
       writeTerminal: () => {}
     });
 
     await session.start();
     session.sendPrompt("hello agent");
 
-    expect(stdinChunks.join("")).toBe("hello agent\n");
+    expect(pty.write).toHaveBeenCalledWith("\u001b[200~hello agent\u001b[201~");
+    expect(pty.write).toHaveBeenCalledWith("\r");
   });
 
   it("emits a stage completion event when stdout contains the active sentinel", async () => {
-    const child = new FakeChildProcess();
+    const pty = new FakePtyProcess();
     const writes: string[] = [];
     const completed: Array<{ stageId: string; sentinel: string }> = [];
     const session = new AgentSession({
       actor: "agent_a",
       launch: createLaunch(),
       workspaceRoot: "D:/repo",
-      spawnProcess: () => child,
+      createProcess: () => pty,
       writeTerminal: (data) => {
         writes.push(data);
       }
@@ -63,8 +111,8 @@ describe("AgentSession", () => {
     await session.start();
     session.beginStage("agent_a_generate", "[DUAL_AGENT] workflow=wf-1 stage=agent_a_generate token=t1 status=done");
 
-    child.stdout.write("working...\n");
-    child.stdout.write("[DUAL_AGENT] workflow=wf-1 stage=agent_a_generate token=t1 status=done\n");
+    pty.emitData("working...\n");
+    pty.emitData("[DUAL_AGENT] workflow=wf-1 stage=agent_a_generate token=t1 status=done\n");
 
     expect(writes.join("")).toContain("working...");
     expect(completed).toEqual([
@@ -76,7 +124,7 @@ describe("AgentSession", () => {
   });
 
   it("emits an exit event when the child process exits", async () => {
-    const child = new FakeChildProcess();
+    const pty = new FakePtyProcess();
     const exits: Array<{ code: number | null; signal: NodeJS.Signals | null }> = [];
     const session = new AgentSession({
       actor: "agent_b",
@@ -85,7 +133,7 @@ describe("AgentSession", () => {
         args: []
       },
       workspaceRoot: "D:/repo",
-      spawnProcess: () => child,
+      createProcess: () => pty,
       writeTerminal: () => {}
     });
 
@@ -94,8 +142,28 @@ describe("AgentSession", () => {
     });
 
     await session.start();
-    child.emit("exit", 2, null);
+    pty.emitExit({ exitCode: 2 });
 
     expect(exits).toEqual([{ code: 2, signal: null }]);
+  });
+
+  it("forwards terminal input and resize events to the PTY", async () => {
+    const pty = new FakePtyProcess();
+    const terminal = new FakeTerminalBridge();
+    const session = new AgentSession({
+      actor: "agent_a",
+      launch: createLaunch(),
+      workspaceRoot: "D:/repo",
+      createProcess: () => pty,
+      terminal,
+      writeTerminal: () => {}
+    });
+
+    await session.start();
+    terminal.emitInput("typed input");
+    terminal.emitResize(120, 40);
+
+    expect(pty.write).toHaveBeenCalledWith("typed input");
+    expect(pty.resize).toHaveBeenCalledWith(120, 40);
   });
 });

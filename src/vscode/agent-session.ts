@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import * as pty from "node-pty";
 
 import type { AgentId } from "../core/types";
 import type { AgentLaunchConfig } from "./cli-adapter";
@@ -27,28 +27,39 @@ interface ActiveStage {
   matched: boolean;
 }
 
-interface SpawnedProcess {
-  stdout: NodeJS.ReadableStream;
-  stderr: NodeJS.ReadableStream;
-  stdin: NodeJS.WritableStream;
+interface DisposableLike {
+  dispose(): void;
+}
+
+export interface TerminalBridge {
+  attachInputHandler?(handler: (data: string) => void): void;
+  attachResizeHandler?(handler: (dimensions: { columns: number; rows: number }) => void): void;
+}
+
+export interface PtyProcess {
+  write(data: string): void;
+  resize(columns: number, rows: number): void;
   kill(): void;
-  on(event: "exit", listener: (code: number | null, signal: NodeJS.Signals | null) => void): void;
+  onData(listener: (data: string) => void): DisposableLike;
+  onExit(listener: (event: { exitCode: number; signal?: number }) => void): DisposableLike;
 }
 
 export interface AgentSessionOptions {
   actor: AgentId;
   launch: AgentLaunchConfig;
   workspaceRoot: string;
-  spawnProcess?: () => SpawnedProcess;
+  createProcess?: () => PtyProcess;
+  terminal?: TerminalBridge;
   writeTerminal: (data: string) => void;
 }
 
 export class AgentSession {
-  private process: SpawnedProcess | null = null;
+  private process: PtyProcess | null = null;
   private status: AgentSessionStatus = "not_started";
   private activeStage: ActiveStage | null = null;
   private readonly stageCompleteListeners = new Set<(event: StageCompleteEvent) => void>();
   private readonly exitListeners = new Set<(event: ExitEvent) => void>();
+  private readonly subscriptions: DisposableLike[] = [];
 
   constructor(private readonly options: AgentSessionOptions) {}
 
@@ -64,20 +75,28 @@ export class AgentSession {
     this.status = "starting";
 
     try {
-      this.process = this.options.spawnProcess?.() ?? this.spawnChildProcess();
-      this.process.stdout.on("data", (chunk) => {
-        this.handleOutput(chunk.toString("utf8"), "stdout");
+      this.process = this.options.createProcess?.() ?? this.createDefaultProcess();
+
+      this.subscriptions.push(
+        this.process.onData((data) => {
+          this.handleOutput(data);
+        }),
+        this.process.onExit((event) => {
+          this.status = "stopped";
+          this.emitExit({
+            code: event.exitCode,
+            signal: null
+          });
+        })
+      );
+
+      this.options.terminal?.attachInputHandler?.((data) => {
+        this.process?.write(data);
       });
-      this.process.stderr.on("data", (chunk) => {
-        this.handleOutput(chunk.toString("utf8"), "stderr");
+      this.options.terminal?.attachResizeHandler?.((dimensions) => {
+        this.process?.resize(dimensions.columns, dimensions.rows);
       });
-      this.process.on("exit", (code, signal) => {
-        this.status = "stopped";
-        this.emitExit({
-          code,
-          signal
-        });
-      });
+
       this.status = "ready";
     } catch (error) {
       this.status = "failed";
@@ -99,8 +118,8 @@ export class AgentSession {
       throw new Error("Agent session has not been started.");
     }
 
-    this.process.stdin.write(prompt);
-    this.process.stdin.write("\n");
+    this.process.write(`\u001b[200~${prompt}\u001b[201~`);
+    this.process.write("\r");
   }
 
   stop(): void {
@@ -108,6 +127,10 @@ export class AgentSession {
     this.process = null;
     this.activeStage = null;
     this.status = "stopped";
+
+    for (const subscription of this.subscriptions.splice(0)) {
+      subscription.dispose();
+    }
   }
 
   onStageComplete(listener: (event: StageCompleteEvent) => void): () => void {
@@ -124,22 +147,40 @@ export class AgentSession {
     };
   }
 
-  private spawnChildProcess(): SpawnedProcess {
-    return spawn(this.options.launch.executable, this.options.launch.args, {
+  private createDefaultProcess(): PtyProcess {
+    const ptyProcess = pty.spawn(this.options.launch.executable, this.options.launch.args, {
+      name: "xterm-256color",
+      cols: 120,
+      rows: 30,
       cwd: this.options.workspaceRoot,
       env: {
         ...process.env,
         ...this.options.launch.env
-      },
-      stdio: "pipe"
+      }
     });
+
+    return {
+      write: (data: string) => {
+        ptyProcess.write(data);
+      },
+      resize: (columns: number, rows: number) => {
+        ptyProcess.resize(columns, rows);
+      },
+      kill: () => {
+        ptyProcess.kill();
+      },
+      onData: (listener: (data: string) => void) => ptyProcess.onData(listener),
+      onExit: (listener: (event: { exitCode: number; signal?: number }) => void) =>
+        ptyProcess.onExit((event) => {
+          listener(event);
+        })
+    };
   }
 
-  private handleOutput(data: string, source: "stdout" | "stderr"): void {
-    this.options.writeTerminal(source === "stderr" ? `[stderr] ${data}` : data);
+  private handleOutput(data: string): void {
+    this.options.writeTerminal(data);
 
     if (
-      source === "stdout" &&
       this.activeStage &&
       !this.activeStage.matched &&
       data.includes(this.activeStage.sentinel)

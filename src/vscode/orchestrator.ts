@@ -372,6 +372,7 @@ export class DualAgentOrchestrator implements vscode.Disposable {
       actor,
       launch: adapter.getLaunchConfig(),
       workspaceRoot: getWorkspaceRoot(),
+      terminal: bridge,
       writeTerminal: (data) => {
         bridge.write(data);
       }

@@ -6,18 +6,20 @@
 
 The extension now starts persistent interactive agent sessions instead of launching one-shot shell commands per stage.
 
-- Agent A and Agent B run as managed long-lived CLI processes
+- Agent A and Agent B run as managed long-lived PTY-backed CLI processes
 - prompts are still written to `.vscode/dual-agent/prompts/`
 - the extension injects each stage prompt into the live agent session
+- terminal keyboard input and panel resize events are forwarded back into the live PTY session
 - a stage completes only when both conditions are true:
   - the active agent prints the expected sentinel line
   - the expected JSON artifact is written and parses successfully
 
-This keeps the workflow deterministic while making Claude and Codex behave like real interactive agents.
+This keeps the workflow deterministic while giving Claude and Codex a real terminal environment instead of a plain pipe.
 
 ## Features
 
 - Built-in `Claude -> Codex` interactive preset
+- Real PTY-backed terminal sessions so terminal UIs can render instead of failing on raw-mode checks
 - Sidebar sections for workflow state, session status, runtime artifacts, and actions
 - File-driven workflow state machine under `.vscode/dual-agent/`
 - Executable preflight checks before workflow start
