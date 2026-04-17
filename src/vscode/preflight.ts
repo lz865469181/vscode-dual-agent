@@ -75,30 +75,7 @@ export async function runAgentPreflight(settings: ExtensionSettings): Promise<Pr
   const issues: PreflightIssue[] = [];
 
   for (const [agentId, agent] of Object.entries(settings.agents) as Array<[AgentId, ExtensionSettings["agents"][AgentId]]>) {
-    const classification = classifyCommandTemplate(agent.commandTemplate);
-
-    if (classification.kind === "legacy_template") {
-      issues.push({
-        agentId,
-        agentName: agent.name,
-        executable: agent.commandTemplate,
-        reason: "legacy_template",
-        suggestedTemplate: agentId === "agent_a" ? DEFAULT_AGENT_A.commandTemplate : DEFAULT_AGENT_B.commandTemplate
-      });
-      continue;
-    }
-
-    if (classification.kind === "unresolved") {
-      issues.push({
-        agentId,
-        agentName: agent.name,
-        executable: agent.commandTemplate,
-        reason: "unresolved_executable"
-      });
-      continue;
-    }
-
-    const executable = classification.executable;
+    const executable = agent.executable;
 
     const available = await isExecutableAvailable(executable);
 

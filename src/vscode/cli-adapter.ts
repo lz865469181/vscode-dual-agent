@@ -135,16 +135,18 @@ export class CliAgentAdapter {
   }
 
   buildCommandWithPrompt(stage: StageDefinition, prompt: string, platform: SupportedPlatform = process.platform): string {
-    if (this.settings.commandTemplate === "builtin:claude") {
+    const commandTemplate = this.settings.commandTemplate ?? "";
+
+    if (commandTemplate === "builtin:claude") {
       return this.buildBuiltinClaudeCommand(stage, platform);
     }
 
-    if (this.settings.commandTemplate === "builtin:codex") {
+    if (commandTemplate === "builtin:codex") {
       return this.buildBuiltinCodexCommand(stage, platform);
     }
 
     return renderTemplate(
-      this.settings.commandTemplate,
+      commandTemplate,
       toTemplateRecord(this.createCommandTemplateValues(stage, prompt, platform))
     );
   }

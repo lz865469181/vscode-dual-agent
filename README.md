@@ -1,14 +1,27 @@
 # Dual Agent Workflow
 
-`dual-agent-vscode` is a standalone VS Code extension that runs a deterministic two-agent generate/review workflow through workspace files stored under `.vscode/dual-agent/`.
+`dual-agent-vscode` is a standalone VS Code extension that runs a deterministic two-agent generate/review workflow through runtime files in `.vscode/dual-agent/`.
+
+## What Changed In Interactive Mode
+
+The extension now starts persistent interactive agent sessions instead of launching one-shot shell commands per stage.
+
+- Agent A and Agent B run as managed long-lived CLI processes
+- prompts are still written to `.vscode/dual-agent/prompts/`
+- the extension injects each stage prompt into the live agent session
+- a stage completes only when both conditions are true:
+  - the active agent prints the expected sentinel line
+  - the expected JSON artifact is written and parses successfully
+
+This keeps the workflow deterministic while making Claude and Codex behave like real interactive agents.
 
 ## Features
 
-- Built-in `Claude ↔ Codex` preset, still editable through settings
-- Sidebar sections for session state, agent bindings, runtime artifacts, and actions
-- File-driven workflow state machine with integrated-terminal execution
-- Startup preflight that checks configured agent CLIs before a workflow begins
-- Runtime prompts and outputs stored in `.vscode/dual-agent/`
+- Built-in `Claude -> Codex` interactive preset
+- Sidebar sections for workflow state, session status, runtime artifacts, and actions
+- File-driven workflow state machine under `.vscode/dual-agent/`
+- Executable preflight checks before workflow start
+- Workspace-relative prompts and runtime paths
 
 ## Runtime Files
 
@@ -19,7 +32,49 @@ The extension coordinates execution with:
 - `review.json`
 - `agent-a-output.json`
 - `agent-b-output.json`
+- `prompts/current-<stage>.md`
 - `session.log`
+
+## How To Start
+
+1. Open a project folder in VS Code.
+2. Open the command palette.
+3. Run `Dual Agent: Start Workflow`.
+4. Edit `.vscode/dual-agent/task.md` with the task you want the agents to execute.
+
+You can also use the Explorer sidebar entry `Dual Agent Workflow` and click `Start Workflow`.
+
+## Configuration
+
+The built-in interactive defaults are:
+
+- `dualAgent.agentA.name = Claude`
+- `dualAgent.agentA.mode = interactive`
+- `dualAgent.agentA.executable = claude`
+- `dualAgent.agentA.args = []`
+- `dualAgent.agentB.name = Codex`
+- `dualAgent.agentB.mode = interactive`
+- `dualAgent.agentB.executable = codex`
+- `dualAgent.agentB.args = []`
+
+The most important settings are:
+
+- `dualAgent.agentA.executable`
+- `dualAgent.agentA.args`
+- `dualAgent.agentB.executable`
+- `dualAgent.agentB.args`
+- `dualAgent.agentA.generatePrompt`
+- `dualAgent.agentA.reviewPrompt`
+- `dualAgent.agentB.generatePrompt`
+- `dualAgent.agentB.reviewPrompt`
+- `dualAgent.workflow.maxIterations`
+- `dualAgent.workflow.timeoutSeconds`
+
+Legacy `commandTemplate` settings are still present only for migration compatibility. Interactive mode no longer depends on PowerShell pipelines such as `Get-Content ... | claude`.
+
+## Preflight
+
+Before a workflow starts, the extension checks that the configured executables exist. If `claude` or `codex` are not on `PATH`, update the corresponding `dualAgent.agentA.executable` or `dualAgent.agentB.executable` setting.
 
 ## Development
 
@@ -30,27 +85,3 @@ npm run typecheck
 npm run build
 npm run package:vsix
 ```
-
-## Configuration
-
-The extension now ships with a default preset:
-
-- `Agent A = Claude`
-- `Agent B = Codex`
-- `dualAgent.agentA.commandTemplate = builtin:claude`
-- `dualAgent.agentB.commandTemplate = builtin:codex`
-
-You can still override everything through VS Code settings:
-
-- `dualAgent.agentA.commandTemplate`
-- `dualAgent.agentB.commandTemplate`
-- `dualAgent.agentA.generatePrompt`
-- `dualAgent.agentA.reviewPrompt`
-- `dualAgent.agentB.generatePrompt`
-- `dualAgent.agentB.reviewPrompt`
-
-`builtin:claude` and `builtin:codex` use the extension's built-in cross-platform wrappers that read `.vscode/dual-agent/prompts/...` safely for PowerShell and POSIX shells.
-
-Custom command templates support placeholders such as `{{prompt}}`, `{{promptFile}}`, `{{outputFile}}`, `{{workspaceFolder}}`, `{{runtimeDir}}`, `{{taskFile}}`, and `{{reviewFile}}`.
-
-If you previously used the old PowerShell-only pipeline templates, run `Dual Agent: Repair Legacy Command Templates` once to replace them with the current cross-platform defaults.

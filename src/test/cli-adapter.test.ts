@@ -20,7 +20,7 @@ describe("CliAgentAdapter prompt rendering", () => {
         name: DEFAULT_AGENT_A.name,
         mode: DEFAULT_AGENT_A.mode,
         executable: DEFAULT_AGENT_A.executable,
-        args: DEFAULT_AGENT_A.args,
+        args: [...DEFAULT_AGENT_A.args],
         prompts: DEFAULT_AGENT_A.prompts
       },
       "D:/repo",
@@ -55,7 +55,7 @@ describe("CliAgentAdapter prompt rendering", () => {
         name: DEFAULT_AGENT_A.name,
         mode: DEFAULT_AGENT_A.mode,
         executable: DEFAULT_AGENT_A.executable,
-        args: DEFAULT_AGENT_A.args,
+        args: [...DEFAULT_AGENT_A.args],
         prompts: DEFAULT_AGENT_A.prompts
       },
       "D:/repo",
@@ -83,7 +83,7 @@ describe("CliAgentAdapter prompt rendering", () => {
         name: DEFAULT_AGENT_A.name,
         mode: DEFAULT_AGENT_A.mode,
         executable: DEFAULT_AGENT_A.executable,
-        args: DEFAULT_AGENT_A.args,
+        args: [...DEFAULT_AGENT_A.args],
         prompts: DEFAULT_AGENT_A.prompts
       },
       "D:/repo",

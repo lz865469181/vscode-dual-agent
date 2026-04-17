@@ -10,7 +10,7 @@ export interface AgentSettings {
   mode: "interactive";
   executable: string;
   args: string[];
-  commandTemplate: string;
+  commandTemplate?: string;
   prompts: {
     generate: string;
     review: string;
