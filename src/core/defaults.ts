@@ -47,11 +47,18 @@ const CODEX_REVIEW_PROMPT = [
   '{ "type": "review", "reviewer": "agent_b", "target": "agent_a", "issues": [{ "severity": "high", "file": "path", "problem": "...", "fix": "..." }], "summary": "Approved or Needs fixes" }'
 ].join("\n");
 
+type StartupAutoResponseRule = {
+  matchAll: string[];
+  response: string;
+  once: boolean;
+};
+
 export const DEFAULT_AGENT_A = {
   name: "Claude",
   mode: "interactive",
   executable: "claude",
   args: [],
+  startupAutoResponses: [] as StartupAutoResponseRule[],
   commandTemplate: "builtin:claude",
   prompts: {
     generate: CLAUDE_GENERATE_PROMPT,
@@ -64,6 +71,13 @@ export const DEFAULT_AGENT_B = {
   mode: "interactive",
   executable: "codex",
   args: [],
+  startupAutoResponses: [
+    {
+      matchAll: ["Do you trust the contents of this directory?", "Press enter to continue"],
+      response: "\r",
+      once: true
+    }
+  ] as StartupAutoResponseRule[],
   commandTemplate: "builtin:codex",
   prompts: {
     generate: CODEX_GENERATE_PROMPT,

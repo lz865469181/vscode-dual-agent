@@ -28,6 +28,13 @@ interface ActiveStage {
   matched: boolean;
 }
 
+interface StartupAutoResponseState {
+  matchAll: string[];
+  response: string;
+  once: boolean;
+  triggered: boolean;
+}
+
 interface DisposableLike {
   dispose(): void;
 }
@@ -54,15 +61,48 @@ export interface AgentSessionOptions {
   writeTerminal: (data: string) => void;
 }
 
+const MAX_OUTPUT_BUFFER_CHUNKS = 20;
+const MAX_OUTPUT_BUFFER_LENGTH = 12000;
+const OSC_SEQUENCE_PATTERN = /\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g;
+const CSI_SEQUENCE_PATTERN = /\u001b\[[0-?]*[ -/]*[@-~]/g;
+const SINGLE_ESCAPE_PATTERN = /\u001b[@-_]/g;
+const NON_PRINTABLE_PATTERN = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g;
+
+function normalizeTerminalTextForMatching(raw: string): string {
+  return raw
+    .replace(OSC_SEQUENCE_PATTERN, "")
+    .replace(/\u001b\[(\d*)C/g, (_match, countText: string) => {
+      const count = Number.parseInt(countText || "1", 10);
+      return " ".repeat(Number.isFinite(count) && count > 0 ? count : 1);
+    })
+    .replace(/\u001b\[[0-9;]*[Hf]/g, "\n")
+    .replace(CSI_SEQUENCE_PATTERN, "")
+    .replace(SINGLE_ESCAPE_PATTERN, "")
+    .replace(/\r/g, "\n")
+    .replace(NON_PRINTABLE_PATTERN, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n+/g, "\n");
+}
+
 export class AgentSession {
   private process: PtyProcess | null = null;
   private status: AgentSessionStatus = "not_started";
   private activeStage: ActiveStage | null = null;
+  private readonly outputBuffer: string[] = [];
+  private readonly normalizedOutputBuffer: string[] = [];
+  private readonly startupAutoResponses: StartupAutoResponseState[];
   private readonly stageCompleteListeners = new Set<(event: StageCompleteEvent) => void>();
   private readonly exitListeners = new Set<(event: ExitEvent) => void>();
   private readonly subscriptions: DisposableLike[] = [];
 
-  constructor(private readonly options: AgentSessionOptions) {}
+  constructor(private readonly options: AgentSessionOptions) {
+    this.startupAutoResponses = (this.options.launch.startupAutoResponses ?? []).map((rule) => ({
+      matchAll: [...rule.matchAll],
+      response: rule.response,
+      once: rule.once,
+      triggered: false
+    }));
+  }
 
   getStatus(): AgentSessionStatus {
     return this.status;
@@ -181,6 +221,16 @@ export class AgentSession {
 
   private handleOutput(data: string): void {
     this.options.writeTerminal(data);
+    this.outputBuffer.push(data);
+    this.trimBuffer(this.outputBuffer);
+
+    const normalizedData = normalizeTerminalTextForMatching(data);
+    if (normalizedData.length > 0) {
+      this.normalizedOutputBuffer.push(normalizedData);
+      this.trimBuffer(this.normalizedOutputBuffer);
+    }
+
+    this.handleStartupAutoResponses(this.normalizedOutputBuffer.join(""));
 
     if (
       this.activeStage &&
@@ -193,6 +243,32 @@ export class AgentSession {
         stageId: this.activeStage.stageId,
         sentinel: this.activeStage.sentinel
       });
+    }
+  }
+
+  private handleStartupAutoResponses(joinedOutput: string): void {
+    if (!this.process) {
+      return;
+    }
+
+    for (const rule of this.startupAutoResponses) {
+      if (rule.once && rule.triggered) {
+        continue;
+      }
+
+      if (rule.matchAll.every((fragment) => joinedOutput.includes(fragment))) {
+        this.process.write(rule.response);
+        rule.triggered = true;
+      }
+    }
+  }
+
+  private trimBuffer(buffer: string[]): void {
+    let totalLength = buffer.reduce((sum, chunk) => sum + chunk.length, 0);
+
+    while (buffer.length > MAX_OUTPUT_BUFFER_CHUNKS || totalLength > MAX_OUTPUT_BUFFER_LENGTH) {
+      const removed = buffer.shift();
+      totalLength -= removed?.length ?? 0;
     }
   }
 

@@ -66,6 +66,7 @@ describe("CliAgentAdapter prompt rendering", () => {
 
     expect(launch.executable).toBe("claude");
     expect(launch.args).toEqual([]);
+    expect(launch.startupAutoResponses).toEqual([]);
   });
 
   it("renders an interactive prompt with sentinel instructions", () => {

@@ -80,6 +80,8 @@ Before a workflow starts, the extension checks that the configured executables e
 
 On Windows, the extension also resolves bare command names such as `claude` or `codex` to concrete launch targets like `.exe` or `.cmd` before starting the PTY session. This avoids `File not found` failures from `node-pty` when the command exists on `PATH` but cannot be launched by name inside a PTY.
 
+For Codex interactive sessions, the extension also auto-confirms the initial workspace trust prompt once when Codex renders `Do you trust the contents of this directory?` with `Press enter to continue`, including the ANSI/cursor-control rendering form used in PTY terminals.
+
 ## Development
 
 ```bash

@@ -10,6 +10,11 @@ export interface AgentLaunchConfig {
   executable: string;
   args: string[];
   env?: Record<string, string>;
+  startupAutoResponses?: Array<{
+    matchAll: string[];
+    response: string;
+    once: boolean;
+  }>;
 }
 
 export interface StageExecutionEnvelope {
@@ -77,7 +82,12 @@ export class CliAgentAdapter {
   getLaunchConfig(): AgentLaunchConfig {
     return {
       executable: this.settings.executable,
-      args: [...this.settings.args]
+      args: [...this.settings.args],
+      startupAutoResponses: (this.settings.startupAutoResponses ?? []).map((rule) => ({
+        matchAll: [...rule.matchAll],
+        response: rule.response,
+        once: rule.once
+      }))
     };
   }
 

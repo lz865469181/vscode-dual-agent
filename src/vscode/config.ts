@@ -10,6 +10,11 @@ export interface AgentSettings {
   mode: "interactive";
   executable: string;
   args: string[];
+  startupAutoResponses?: Array<{
+    matchAll: string[];
+    response: string;
+    once: boolean;
+  }>;
   commandTemplate?: string;
   prompts: {
     generate: string;
@@ -96,6 +101,11 @@ export function getExtensionSettings(): ExtensionSettings {
         mode: "interactive",
         executable: config.get<string>("agentA.executable", DEFAULT_AGENT_A.executable),
         args: config.get<string[]>("agentA.args", [...DEFAULT_AGENT_A.args]),
+        startupAutoResponses: (DEFAULT_AGENT_A.startupAutoResponses ?? []).map((rule) => ({
+          matchAll: [...rule.matchAll],
+          response: rule.response,
+          once: rule.once
+        })),
         commandTemplate: config.get<string>(
           "agentA.commandTemplate",
           DEFAULT_AGENT_A.commandTemplate
@@ -111,6 +121,11 @@ export function getExtensionSettings(): ExtensionSettings {
         mode: "interactive",
         executable: config.get<string>("agentB.executable", DEFAULT_AGENT_B.executable),
         args: config.get<string[]>("agentB.args", [...DEFAULT_AGENT_B.args]),
+        startupAutoResponses: (DEFAULT_AGENT_B.startupAutoResponses ?? []).map((rule) => ({
+          matchAll: [...rule.matchAll],
+          response: rule.response,
+          once: rule.once
+        })),
         commandTemplate: config.get<string>(
           "agentB.commandTemplate",
           DEFAULT_AGENT_B.commandTemplate

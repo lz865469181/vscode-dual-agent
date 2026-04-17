@@ -166,4 +166,61 @@ describe("AgentSession", () => {
     expect(pty.write).toHaveBeenCalledWith("typed input");
     expect(pty.resize).toHaveBeenCalledWith(120, 40);
   });
+
+  it("auto-confirms the Codex trust prompt once when all match fragments are present", async () => {
+    const pty = new FakePtyProcess();
+    const session = new AgentSession({
+      actor: "agent_b",
+      launch: {
+        executable: "codex",
+        args: [],
+        startupAutoResponses: [
+          {
+            matchAll: ["Do you trust the contents of this directory?", "Press enter to continue"],
+            response: "\r",
+            once: true
+          }
+        ]
+      },
+      workspaceRoot: "D:/repo",
+      createProcess: () => pty,
+      writeTerminal: () => {}
+    });
+
+    await session.start();
+    pty.emitData("Do you trust the contents of this directory?\n");
+    pty.emitData("Press enter to continue\n");
+    pty.emitData("Do you trust the contents of this directory?\nPress enter to continue\n");
+
+    expect(pty.write).toHaveBeenCalledTimes(1);
+    expect(pty.write).toHaveBeenCalledWith("\r");
+  });
+
+  it("auto-confirms even when the trust prompt contains ANSI control sequences", async () => {
+    const pty = new FakePtyProcess();
+    const session = new AgentSession({
+      actor: "agent_b",
+      launch: {
+        executable: "codex",
+        args: [],
+        startupAutoResponses: [
+          {
+            matchAll: ["Do you trust the contents of this directory?", "Press enter to continue"],
+            response: "\r",
+            once: true
+          }
+        ]
+      },
+      workspaceRoot: "D:/repo",
+      createProcess: () => pty,
+      writeTerminal: () => {}
+    });
+
+    await session.start();
+    pty.emitData("\u001b[5;3HDo\u001b[1Cyou\u001b[1Ctrust\u001b[1Cthe\u001b[1Ccontents\u001b[1Cof\u001b[1Cthis\u001b[1Cdirectory?\u001b[K");
+    pty.emitData("\u001b[11;3HPress enter to continue\u001b[22m\u001b[K");
+
+    expect(pty.write).toHaveBeenCalledTimes(1);
+    expect(pty.write).toHaveBeenCalledWith("\r");
+  });
 });

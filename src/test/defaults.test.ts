@@ -28,6 +28,9 @@ describe("built-in defaults", () => {
     expect(DEFAULT_AGENT_B.executable).toBe("codex");
     expect(DEFAULT_AGENT_A.args).toEqual([]);
     expect(DEFAULT_AGENT_B.args).toEqual([]);
+    expect(DEFAULT_AGENT_A.startupAutoResponses).toEqual([]);
+    expect(DEFAULT_AGENT_B.startupAutoResponses).toHaveLength(1);
+    expect(DEFAULT_AGENT_B.startupAutoResponses[0]?.matchAll).toContain("Do you trust the contents of this directory?");
     expect(DEFAULT_AGENT_A.prompts.generate).toContain("{{outputFile}}");
     expect(DEFAULT_AGENT_B.prompts.review).toContain("{{outputFile}}");
   });
